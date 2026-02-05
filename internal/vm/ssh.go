@@ -1,17 +1,17 @@
-package main
+package vm
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"golang.org/x/crypto/ssh"
-	"os"
 )
 
 type SSHClient struct {
-	client *ssh.Client
-	host   string
-	user   string
+	Client *ssh.Client
+	Host   string
+	User   string
 }
 
 type SSHAuth struct {
@@ -59,14 +59,14 @@ func NewSSHClient(host, user string, auth SSHAuth) (*SSHClient, error) {
 	}
 
 	return &SSHClient{
-		client: client,
-		host:   host,
-		user:   user,
+		Client: client,
+		Host:   host,
+		User:   user,
 	}, nil
 }
 
 func (c *SSHClient) Execute(cmd string) (string, error) {
-	session, err := c.client.NewSession()
+	session, err := c.Client.NewSession()
 	if err != nil {
 		return "", fmt.Errorf("creating session: %w", err)
 	}
@@ -81,5 +81,5 @@ func (c *SSHClient) Execute(cmd string) (string, error) {
 }
 
 func (c *SSHClient) Close() error {
-	return c.client.Close()
+	return c.Client.Close()
 }

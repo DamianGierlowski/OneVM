@@ -1,4 +1,4 @@
-package main
+package vm
 
 import (
 	"os"
@@ -28,6 +28,22 @@ func TestLoadManifest(t *testing.T) {
 		}
 		if len(m.Files) != 1 {
 			t.Errorf("got %d files, want 1", len(m.Files))
+		}
+	})
+
+	t.Run("manifest with password auth", func(t *testing.T) {
+		path := filepath.Join(dir, "password.json")
+		os.WriteFile(path, []byte(`{
+			"servers": [{"host": "10.0.0.1", "user": "admin", "password": "secret"}],
+			"files": [{"local": "./app.conf", "remote": "/etc/app.conf"}]
+		}`), 0644)
+
+		m, err := LoadManifest(path)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if m.Servers[0].Password != "secret" {
+			t.Errorf("got password %q, want %q", m.Servers[0].Password, "secret")
 		}
 	})
 
@@ -72,9 +88,17 @@ func TestValidateManifest(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "valid",
+			name: "valid with key",
 			m: Manifest{
 				Servers: []ServerConfig{{Host: "h", User: "u", Key: "k"}},
+				Files:   []FileConfig{{Local: "l", Remote: "r"}},
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid with password",
+			m: Manifest{
+				Servers: []ServerConfig{{Host: "h", User: "u", Password: "p"}},
 				Files:   []FileConfig{{Local: "l", Remote: "r"}},
 			},
 			wantErr: false,
@@ -112,14 +136,6 @@ func TestValidateManifest(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "server with password instead of key",
-			m: Manifest{
-				Servers: []ServerConfig{{Host: "h", User: "u", Password: "p"}},
-				Files:   []FileConfig{{Local: "l", Remote: "r"}},
-			},
-			wantErr: false,
-		},
-		{
 			name: "server missing key and password",
 			m: Manifest{
 				Servers: []ServerConfig{{Host: "h", User: "u"}},
@@ -155,36 +171,6 @@ func TestValidateManifest(t *testing.T) {
 	}
 }
 
-func TestParseServerString(t *testing.T) {
-	tests := []struct {
-		input    string
-		wantUser string
-		wantHost string
-		wantErr  bool
-	}{
-		{"admin@10.0.0.1", "admin", "10.0.0.1", false},
-		{"root@server.local", "root", "server.local", false},
-		{"bad-format", "", "", true},
-		{"@nouser", "", "", true},
-		{"nohost@", "", "", true},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.input, func(t *testing.T) {
-			user, host, err := parseServerString(tt.input)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("error = %v, wantErr %v", err, tt.wantErr)
-			}
-			if user != tt.wantUser {
-				t.Errorf("user = %q, want %q", user, tt.wantUser)
-			}
-			if host != tt.wantHost {
-				t.Errorf("host = %q, want %q", host, tt.wantHost)
-			}
-		})
-	}
-}
-
 func TestExpandHome(t *testing.T) {
 	home, _ := os.UserHomeDir()
 
@@ -199,9 +185,9 @@ func TestExpandHome(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
-			got := expandHome(tt.input)
+			got := ExpandHome(tt.input)
 			if got != tt.want {
-				t.Errorf("expandHome(%q) = %q, want %q", tt.input, got, tt.want)
+				t.Errorf("ExpandHome(%q) = %q, want %q", tt.input, got, tt.want)
 			}
 		})
 	}

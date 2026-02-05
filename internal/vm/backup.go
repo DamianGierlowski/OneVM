@@ -1,4 +1,4 @@
-package main
+package vm
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const backupDir = "./backups"
+const BackupDir = "./backups"
 
 type BackupInfo struct {
 	Path      string
@@ -24,9 +24,9 @@ func CreateBackup(transfer *SFTPTransfer, remotePath, host string) (string, erro
 	timestamp := time.Now().Format("20060102-150405")
 	safeName := strings.ReplaceAll(remotePath, "/", "_")
 	backupName := fmt.Sprintf("%s%s_%s", host, safeName, timestamp)
-	backupPath := filepath.Join(backupDir, backupName)
+	backupPath := filepath.Join(BackupDir, backupName)
 
-	if err := os.MkdirAll(backupDir, 0755); err != nil {
+	if err := os.MkdirAll(BackupDir, 0755); err != nil {
 		return "", fmt.Errorf("creating backup directory: %w", err)
 	}
 
@@ -38,7 +38,7 @@ func CreateBackup(transfer *SFTPTransfer, remotePath, host string) (string, erro
 }
 
 func ListBackups() ([]BackupInfo, error) {
-	entries, err := os.ReadDir(backupDir)
+	entries, err := os.ReadDir(BackupDir)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -56,7 +56,7 @@ func ListBackups() ([]BackupInfo, error) {
 			continue
 		}
 		backups = append(backups, BackupInfo{
-			Path:      filepath.Join(backupDir, entry.Name()),
+			Path:      filepath.Join(BackupDir, entry.Name()),
 			Timestamp: info.ModTime(),
 		})
 	}
@@ -68,7 +68,7 @@ func ListBackups() ([]BackupInfo, error) {
 	return backups, nil
 }
 
-func findLatestBackup(host, remotePath string) (string, error) {
+func FindLatestBackup(host, remotePath string) (string, error) {
 	backups, err := ListBackups()
 	if err != nil {
 		return "", err

@@ -1,4 +1,4 @@
-package main
+package vm
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ type SFTPTransfer struct {
 }
 
 func NewSFTPTransfer(sshClient *SSHClient) (*SFTPTransfer, error) {
-	client, err := sftp.NewClient(sshClient.client)
+	client, err := sftp.NewClient(sshClient.Client)
 	if err != nil {
 		return nil, fmt.Errorf("creating SFTP client: %w", err)
 	}

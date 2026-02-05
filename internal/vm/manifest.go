@@ -1,4 +1,4 @@
-package main
+package vm
 
 import (
 	"encoding/json"
@@ -76,7 +76,7 @@ func ValidateManifest(m *Manifest) error {
 	return nil
 }
 
-func expandHome(path string) string {
+func ExpandHome(path string) string {
 	if strings.HasPrefix(path, "~/") {
 		home, err := os.UserHomeDir()
 		if err != nil {
